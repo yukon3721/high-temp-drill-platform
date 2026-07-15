@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>40℃高溫即時調適行動演練 — 腳本協作平台</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --card: #1a1d27;
+    --border: #2a2d3a;
+    --text: #e1e4ed;
+    --muted: #8b8fa3;
+    --accent: #f59e4b;
+    --red: #ef4444;
+    --green: #22c55e;
+    --blue: #3b82f6;
+    --purple: #a855f7;
+    --cyan: #06b6d4;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans TC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #1a1d27 0%, #1e1325 50%, #1a1220 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 2rem 2rem 1.5rem;
+  }
+  .header-top {
+    display: flex; align-items: center; gap: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  .temp-badge {
+    background: linear-gradient(135deg, #ef4444, #f59e4b);
+    color: #fff;
+    font-size: 2.5rem; font-weight: 900;
+    padding: 0.5rem 1.2rem;
+    border-radius: 12px;
+    line-height: 1;
+  }
+  .header h1 {
+    font-size: 1.8rem; font-weight: 700;
+    background: linear-gradient(90deg, #f59e4b, #ef4444);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .header .subtitle {
+    color: var(--muted); font-size: 0.9rem; margin-top: 0.3rem;
+  }
+  .header-meta {
+    display: flex; gap: 2rem; margin-top: 1rem;
+    flex-wrap: wrap;
+  }
+  .meta-item {
+    display: flex; gap: 0.5rem; align-items: center;
+    color: var(--muted); font-size: 0.85rem;
+  }
+  .meta-item strong { color: var(--text); }
+
+  /* Tabs */
+  .tabs {
+    display: flex; gap: 0; border-bottom: 1px solid var(--border);
+    background: var(--bg); padding: 0 2rem; overflow-x: auto;
+  }
+  .tab {
+    padding: 0.8rem 1.4rem; cursor: pointer; border: none; background: none;
+    color: var(--muted); font-size: 0.9rem; font-weight: 500;
+    border-bottom: 2px solid transparent; transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* Main */
+  .main { max-width: 1400px; margin: 0 auto; padding: 1.5rem 2rem; }
+
+  /* Stage cards */
+  .stage-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 1rem;
+  }
+  .stage-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1.2rem;
+    transition: border-color 0.2s;
+  }
+  .stage-card:hover { border-color: var(--accent); }
+  .stage-header {
+    display: flex; justify-content: space-between; align-items: start;
+    margin-bottom: 0.8rem;
+  }
+  .stage-num {
+    font-size: 0.75rem; color: var(--accent); font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .stage-title {
+    font-size: 1.1rem; font-weight: 700; margin-top: 0.1rem;
+  }
+  .stage-badge {
+    padding: 0.2rem 0.6rem; border-radius: 20px;
+    font-size: 0.7rem; font-weight: 600; white-space: nowrap;
+  }
+  .badge-prep { background: #1e3a2f; color: #4ade80; }
+  .badge-action { background: #1e2a4f; color: #60a5fa; }
+  .badge-crisis { background: #3b1e1e; color: #f87171; }
+  .badge-resolve { background: #2e1e3b; color: #c084fc; }
+  .badge-review { background: #1e352f; color: #2dd4bf; }
+
+  .stage-scenario {
+    background: #0d1114; border-radius: 8px; padding: 0.8rem;
+    margin: 0.8rem 0; font-size: 0.85rem;
+    border-left: 3px solid var(--accent);
+  }
+  .stage-scenario li {
+    margin-left: 1rem; margin-bottom: 0.3rem; color: var(--muted);
+    list-style: '⚫ ';
+  }
+  .stage-depts {
+    font-size: 0.78rem; color: var(--muted);
+    display: flex; flex-wrap: wrap; gap: 0.3rem;
+    margin-top: 0.6rem;
+  }
+  .dept-tag {
+    background: #252830; padding: 0.15rem 0.5rem; border-radius: 4px;
+    font-size: 0.72rem;
+  }
+
+  /* Participants */
+  .participants-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+  .org-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1rem;
+  }
+  .org-card h3 { font-size: 1rem; margin-bottom: 0.3rem; }
+  .org-card .org-type {
+    font-size: 0.7rem; text-transform: uppercase; color: var(--accent);
+    font-weight: 600; letter-spacing: 0.05em;
+  }
+  .org-stages {
+    margin-top: 0.5rem; display: flex; gap: 0.3rem; flex-wrap: wrap;
+  }
+  .org-stage-tag {
+    font-size: 0.65rem; padding: 0.1rem 0.4rem;
+    border-radius: 3px; background: #252830;
+  }
+
+  /* Timeline */
+  .timeline { position: relative; padding-left: 2rem; }
+  .timeline::before {
+    content: ''; position: absolute; left: 0.5rem; top: 0; bottom: 0;
+    width: 2px; background: var(--border);
+  }
+  .tl-item {
+    position: relative; margin-bottom: 2rem; padding-left: 1.5rem;
+  }
+  .tl-item::before {
+    content: ''; position: absolute; left: -1.65rem; top: 0.4rem;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--accent); border: 2px solid var(--bg);
+  }
+  .tl-item.day { font-size: 0.75rem; color: var(--accent); font-weight: 700; }
+  .tl-item h4 { font-size: 1rem; margin: 0.2rem 0 0.5rem; }
+  .tl-item .tl-desc { color: var(--muted); font-size: 0.85rem; }
+
+  /* Table */
+  table.data-table {
+    width: 100%; border-collapse: collapse; font-size: 0.85rem;
+  }
+  table.data-table th {
+    text-align: left; padding: 0.6rem 0.8rem;
+    background: var(--card); border-bottom: 2px solid var(--border);
+    font-weight: 600; color: var(--accent);
+  }
+  table.data-table td {
+    padding: 0.5rem 0.8rem; border-bottom: 1px solid var(--border);
+  }
+  table.data-table tr:hover td { background: #1a1d27; }
+
+  /* Stats row */
+  .stats-row {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem; margin-bottom: 1.5rem;
+  }
+  .stat-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1rem; text-align: center;
+  }
+  .stat-value {
+    font-size: 2rem; font-weight: 800;
+    background: linear-gradient(135deg, #f59e4b, #ef4444);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .stat-label { font-size: 0.8rem; color: var(--muted); margin-top: 0.2rem; }
+
+  /* Footer */
+  .footer {
+    text-align: center; padding: 2rem;
+    color: var(--muted); font-size: 0.78rem;
+    border-top: 1px solid var(--border); margin-top: 2rem;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .header h1 { font-size: 1.3rem; }
+    .temp-badge { font-size: 1.8rem; }
+    .stage-grid { grid-template-columns: 1fr; }
+    .main, .tabs { padding: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="temp-badge">40°C</div>
+    <div>
+      <h1>高溫即時調適行動演練 — 腳本協作平台</h1>
+      <div class="subtitle">環境部氣候變遷署 主辦 · 115 年 6 月 29 日兵棋推演 · 34 個參演單位</div>
+    </div>
+  </div>
+  <div class="header-meta">
+    <div class="meta-item">📅 <strong>演練日期</strong> 115/6/29（週一）14:00–16:50</div>
+    <div class="meta-item">📍 <strong>地點</strong> 環境部後棟 301 室（臺北市中正區延平南路 156 號）</div>
+    <div class="meta-item">🎯 <strong>情境</strong> 雙北、桃園連續 3 日 40°C 極端高溫</div>
+    <div class="meta-item">🏛️ <strong>主政</strong> 環境部氣候變遷署</div>
+  </div>
+</div>
+
+<div class="tabs" id="tabs">
+  <button class="tab active" onclick="switchTab('overview')">📊 演練總覽</button>
+  <button class="tab" onclick="switchTab('stages')">📋 七階段腳本</button>
+  <button class="tab" onclick="switchTab('timeline')">⏱️ 時序軸</button>
+  <button class="tab" onclick="switchTab('orgs')">🏛️ 參演單位</button>
+  <button class="tab" onclick="switchTab('scenarios')">⚡ 關鍵情境</button>
+  <button class="tab" onclick="switchTab('reference')">📂 參考文件</button>
+</div>
+
+<div class="main" id="content">
+  <!-- Dynamic content loaded by JS -->
+</div>
+
+<div class="footer">
+  40℃高溫即時調適行動兵棋推演 · 腳本協作平台<br>
+  環境部氣候變遷署主辦 | 資料來源：115年40℃高溫即時調適行動兵棋推演 演練手冊（草稿）<br>
+  本平台為演練腳本協作參考用，非官方正式文件
+</div>
+
+<script>
+// Data
+const stages = [
+  {
+    id: 1, name: '演練準備階段（高溫預警）',
+    type: 'prep', time: 'Day -2 ~ Day -1',
+    scenario: [
+      '北台灣受太平洋副熱帶高壓影響，連日高溫',
+      '氣象署 D-2 發布橙燈，D-1 18:00 發布雙北桃園紅燈預警',
+      '氣溫有機會達 40℃ 以上',
+      '環境部通知各部會 D0 10:00 召開高溫調適行動會議',
+      '五股、內湖、蘆竹變電所出現過載預警'
+    ],
+    depts: ['交通部氣象署', '環境部氣候署', '雙北桃園市政府']
+  },
+  {
+    id: 2, name: '召開高溫調適行動會議',
+    type: 'action', time: 'Day 0 上午',
+    scenario: [
+      '內湖/五股/蘆竹測站測得 40℃',
+      '環境部召開高溫調適行動會議',
+      '34 個單位說明調適行動措施',
+      '台北市：啟動熱浪災害防救對策（灑水、關懷、勞檢）',
+      '新北市：街道灑水降溫、獨老關懷、戶外工作防護',
+      '桃園市：紅燈應變小組、工地灑水、戶外活動管控'
+    ],
+    depts: ['全部 34 個參演單位']
+  },
+  {
+    id: 3, name: '40℃ 高溫 — 初步失能徵兆',
+    type: 'crisis', time: 'Day 0 下午～傍晚',
+    scenario: [
+      '內湖區發生饋線事故，影響上千戶，三總啟動備載電力',
+      '北北桃敏感族群（年長/年幼）熱衰竭、熱中暑',
+      '60+ 人熱傷害急診送醫，有中重症',
+      '晚間限電導致加壓站停擺，引發停水',
+      '北捷淡水線鋼軌 >60°C，列車限速運轉'
+    ],
+    depts: ['台電', '衛福部國健署/疾管署/醫事司', '經濟部水利署', '北捷', '雙北桃園市政府', '內政部消防署']
+  },
+  {
+    id: 4, name: '40℃ 高溫 — 損害累積',
+    type: 'crisis', time: 'Day 1',
+    scenario: [
+      '北捷淡水線道碴段鋼軌 >60°C，行控啟動限速 40 KPH',
+      '戶外工作者（營造、外送、軍警消）熱傷害',
+      '50+ 人熱傷害急診送醫',
+      '慢性病患者熱衰竭增加',
+      '北北桃啟動緊急醫療調適行動中心（EOC）'
+    ],
+    depts: ['北捷', '交通部', '勞動部職安署', '衛福部', '雙北桃園市政府', '內政部消防署/警政署']
+  },
+  {
+    id: 5, name: '40℃ 高溫 — 災情惡化',
+    type: 'crisis', time: 'Day 2',
+    scenario: [
+      '新北市垃圾堆置悶燒（連日高溫蓄熱）',
+      '五股/內湖/蘆竹工業區柏油軟化，路面變形',
+      '區域性大停電，淡水線列車停擺，420 名乘客疏散',
+      '鐵皮屋室內 >50°C，119 湧入 300+ 求救電話',
+      '交通號誌癱瘓，救護車後送延長 3 倍',
+      '新北市啟動「極端災難防護指令」：強制撤離、冷卻站開設',
+      '32 家急救醫院備援發電機運轉，守住醫療防線'
+    ],
+    depts: ['環境部環管署', '交通部', '衛福部 EOC', '台電', '經濟部水利署', '新北市政府', '內政部消防署', '文化部']
+  },
+  {
+    id: 6, name: '高溫緊急危害狀況解除',
+    type: 'resolve', time: 'Day 3',
+    scenario: [
+      '氣溫下降至 36℃，高溫警戒解除',
+      '各部會三日事件檢討',
+      '氣候署：推動極端高溫納入災害防救法',
+      '環管署：全國焚化廠韌性升級計畫',
+      '交通部：核定高溫調適班表、500 輛客運備援',
+      '衛福部：精進熱傷害監測與院前分流機制',
+      '勞動部：強制要求事業單位設置遮陽及降溫設備'
+    ],
+    depts: ['全部 34 個參演單位']
+  },
+  {
+    id: 7, name: '調適行動演練結束（評核階段）',
+    type: 'review', time: 'Day 3 下午',
+    scenario: [
+      '評核官：林子平教授（成大建築）、王玉純教授（中原環工）、吳章甫教授（臺大公衛）',
+      '各參演單位自評',
+      '主推官宣布演練結束',
+      '後續：7 月擇定一縣市辦理實兵演練'
+    ],
+    depts: ['評核官', '主推官', '督導官', '全部參演單位']
+  }
+];
+
+const orgs = [
+  { name: '環境部氣候變遷署', type: '主政召集', stages: [2,3,4,5,6] },
+  { name: '環境部環境管理署', type: '中央部會', stages: [2,3,4,5,6] },
+  { name: '環境部資源循環署', type: '中央部會', stages: [2,3,4,5,6] },
+  { name: '交通部（本部）', type: '中央部會', stages: [2,3,4,5,6] },
+  { name: '交通部中央氣象署', type: '中央部會', stages: [2,3,4,5,6] },
+  { name: '交通部觀光署', type: '中央部會', stages: [2,3,4,5,6] },
+  { name: '經濟部能源署（含台電）', type: '中央部會/國營', stages: [2,3,4,5,6] },
+  { name: '經濟部產業發展署', type: '中央部會', stages: [2,3,5,6] },
+  { name: '經濟部水利署（含台水）', type: '中央部會/國營', stages: [2,3,4,5,6] },
+  { name: '內政部消防署', type: '中央部會', stages: [2,3,4,5,6] },
+  { name: '內政部警政署', type: '中央部會', stages: [2,3,4,5,6] },
+  { name: '內政部國土管理署', type: '中央部會', stages: [2,3,5,6] },
+  { name: '內政部國家公園署', type: '中央部會', stages: [2,3,4,5,6] },
+  { name: '衛福部國民健康署', type: '中央部會', stages: [2,3,4,5,6] },
+  { name: '衛福部疾病管制署', type: '中央部會', stages: [2,3,4,5,6] },
+  { name: '衛福部醫事司', type: '中央部會', stages: [2,3,4,5,6] },
+  { name: '衛福部社會及家庭署', type: '中央部會', stages: [2,3,4,5,6] },
+  { name: '衛福部社會救助及社工司', type: '中央部會', stages: [2,3,5,6] },
+  { name: '衛福部長期照顧司', type: '中央部會', stages: [2,3,6] },
+  { name: '勞動部職業安全衛生署', type: '中央部會', stages: [2,3,4,5,6] },
+  { name: '農業部（本部）', type: '中央部會', stages: [2,3,4,5,6] },
+  { name: '農業部林業及自然保育署', type: '中央部會', stages: [2,3,4,5,6] },
+  { name: '教育部', type: '中央部會', stages: [2,3,4,5,6] },
+  { name: '文化部', type: '中央部會', stages: [2,3,4,5,6] },
+  { name: '數位發展部', type: '中央部會', stages: [2,3,5,6] },
+  { name: '國家通訊傳播委員會（NCC）', type: '中央部會', stages: [2,3,5,6] },
+  { name: '行政院公共工程委員會', type: '中央部會', stages: [2,3,5,6] },
+  { name: '國家發展委員會', type: '中央部會', stages: [2,3,5,6] },
+  { name: '國家科學及技術委員會', type: '中央部會', stages: [2,3,5,6] },
+  { name: '金融監督管理委員會', type: '中央部會', stages: [2,3,4,5,6] },
+  { name: '原住民族委員會', type: '中央部會', stages: [2,3,4,5,6] },
+  { name: '海洋委員會', type: '中央部會', stages: [2,3,5,6] },
+  { name: '臺北市政府', type: '地方政府', stages: [2,3,4,5,6] },
+  { name: '新北市政府', type: '地方政府', stages: [2,3,4,5,6] },
+  { name: '桃園市政府', type: '地方政府', stages: [2,3,4,5,6] }
+];
+
+const timelineEvents = [
+  { day: 'Day -2', time: '前日', title: '氣象署發布橙燈高溫預警', desc: '北台灣連日高溫，太平洋副熱帶高壓影響' },
+  { day: 'Day -1', time: '18:00', title: '發布雙北桃園紅燈預警', desc: '明日氣溫有機會達 40℃ 以上；環境部通知各部會召開調適會議' },
+  { day: 'Day 0', time: '上午', title: '內湖/五股/蘆竹測得 40℃', desc: '氣象署確認三測站達 40℃，環境部 10:00 召開高溫調適行動會議' },
+  { day: 'Day 0', time: '下午', title: '內湖區饋線事故', desc: '影響上千戶住宅，三總啟動備載電力；60+ 人熱傷害急診送醫' },
+  { day: 'Day 0', time: '晚間', title: '限電導致停水', desc: '用電攀升導致部分地區限電，加壓站停擺引發停水' },
+  { day: 'Day 1', time: '全日', title: '北捷鋼軌 >60°C 限速', desc: '淡水線道碴段限速 40 KPH；戶外工作者 50+ 人熱傷害送醫' },
+  { day: 'Day 2', time: '上午', title: '大規模停電', desc: '淡水線列車停擺，420 名乘客疏散；交通號誌癱瘓' },
+  { day: 'Day 2', time: '下午', title: '複合災情惡化', desc: '垃圾悶燒、柏油軟化、鐵皮屋 >50°C；新北市啟動極端災難防護指令' },
+  { day: 'Day 2', time: '晚間', title: '醫療防線守住', desc: '跨區醫療支援網絡啟動，32 家急救醫院維持運轉' },
+  { day: 'Day 3', time: '全日', title: '高溫警戒解除', desc: '氣溫降至 36℃；各部會展開三日事件檢討與調適計畫修訂' },
+  { day: 'Day 3', time: '下午', title: '評核與演練結束', desc: '三位教授評核，主推官宣布演練結束；7 月擇定縣市實兵演練' }
+];
+
+const keyScenarios = [
+  {
+    title: '電網失效 → 醫療體系壓力',
+    event: '內湖區饋線事故',
+    chain: '變電所過載 → 區域停電 → 三總啟動備載 → 加壓站停擺 → 停水',
+    response: '台電需量反應 + 緊急分區限電；衛福部啟動 EOC 醫療資源調度',
+    stage: 3
+  },
+  {
+    title: '軌道高溫 → 運輸癱瘓',
+    event: '北捷淡水線鋼軌 >60°C',
+    chain: '軌溫 60°C → 限速 40 KPH → 停電列車受困 → 420 人疏散 → 公路壅塞',
+    response: '四級軌溫應變（巡檢→密集巡檢→限速→停駛）；協調公車備援',
+    stage: 4
+  },
+  {
+    title: '都市熱島 → 室內高熱危機',
+    event: '鐵皮屋/頂加 >50°C',
+    chain: '停電 + 40°C 日曬 → 室內 >50°C → 300+ 求救電話 → 急診滿床',
+    response: '強制預防撤離；開設大型冷卻站（體育館/市府大廳）；救護車專用路廊',
+    stage: 5
+  },
+  {
+    title: '熱傷害大量傷患 → 醫療分流',
+    event: '60+/50+ 人熱傷害急診',
+    chain: '高溫曝曬 → 熱衰竭/中暑 → 急診湧入 → 滿床 → 跨區轉送',
+    response: '院前分流 + 戶外緊急降溫站 + 跨區醫療支援網絡（北區 EOC）',
+    stage: 3
+  },
+  {
+    title: '基礎設施連鎖失效',
+    event: '垃圾悶燒 + 柏油軟化',
+    chain: '連日 40°C → 垃圾沼氣自燃 → 路面瀝青軟化 → 大卡車輾壓變形',
+    response: '紅外線熱顯像儀監控 + 預防性灑水 + 路面搶修 + 夜間物流調度',
+    stage: 5
+  },
+  {
+    title: '金融系統韌性',
+    event: '大停電下的金融運作',
+    chain: '區域停電 → ATM 停擺 → 電子支付失效 → 民眾恐慌',
+    response: '金管會：核心系統切換異地備援+UPS；要求金融機構啟動 BCP',
+    stage: 5
+  }
+];
+
+// Tab switching
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  
+  const content = document.getElementById('content');
+  switch(tab) {
+    case 'overview': renderOverview(content); break;
+    case 'stages': renderStages(content); break;
+    case 'timeline': renderTimeline(content); break;
+    case 'orgs': renderOrgs(content); break;
+    case 'scenarios': renderScenarios(content); break;
+    case 'reference': renderReference(content); break;
+  }
+}
+
+function typeBadge(type) {
+  const map = {
+    'prep': ['前置準備', 'badge-prep'],
+    'action': ['調適行動', 'badge-action'],
+    'crisis': ['災害應變', 'badge-crisis'],
+    'resolve': ['狀況解除', 'badge-resolve'],
+    'review': ['評核階段', 'badge-review']
+  };
+  const [label, cls] = map[type] || [type, ''];
+  return `<span class="stage-badge ${cls}">${label}</span>`;
+}
+
+function renderOverview(el) {
+  el.innerHTML = `
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-value">7</div><div class="stat-label">演練階段</div></div>
+      <div class="stat-card"><div class="stat-value">34</div><div class="stat-label">參演單位</div></div>
+      <div class="stat-card"><div class="stat-value">3</div><div class="stat-label">情境日（Day 0-2）</div></div>
+      <div class="stat-card"><div class="stat-value">3</div><div class="stat-label">雙北桃園市</div></div>
+      <div class="stat-card"><div class="stat-value">40°C</div><div class="stat-label">演練觸發門檻</div></div>
+    </div>
+
+    <h2 style="margin-bottom: 1rem;">🎯 演練定位</h2>
+    <div class="stage-card" style="margin-bottom: 1.5rem;">
+      <p style="margin-bottom: 0.8rem;">本次演練定位為<strong>「氣候變遷下的即時調適行動演練」</strong>，因高溫尚不屬《災害防救法》天然災害範疇，演練著重於：</p>
+      <ul style="margin-left: 1.5rem; color: var(--muted);">
+        <li>預防、降低高溫衝擊與跨部會協作</li>
+        <li>模擬極端高溫下政府啟動的跨部門行動機制</li>
+        <li>建立中央與地方的合作鏈結</li>
+        <li>逐步推動整體抗高溫政策檢討與調適策略生態建構</li>
+      </ul>
+    </div>
+
+    <h2 style="margin-bottom: 1rem;">🔑 北捷參與重點</h2>
+    <div class="stage-card">
+      <p style="margin-bottom: 0.8rem;">北捷於<strong>階段四</strong>出場，情境為淡水線鋼軌 >60°C：</p>
+      <table class="data-table">
+        <tr><th>軌溫級別</th><th>溫度</th><th>應變行動</th></tr>
+        <tr><td>🟢 第 1 級 · 巡檢戒備</td><td>50~55°C</td><td>每 2 小時車巡一次（道碴段）</td></tr>
+        <tr><td>🟡 第 2 級 · 密集巡檢</td><td>55~60°C</td><td>每 1 小時車巡一次（道碴段）</td></tr>
+        <tr><td>🟠 第 3 級 · 限速運轉</td><td>60~65°C</td><td>限速 40 KPH，每 1 小時車巡（露天段全線）</td></tr>
+        <tr><td>🔴 第 4 級 · 區段停駛</td><td>≥ 65°C</td><td>列車停止服務（道碴段），每 1 小時車巡</td></tr>
+      </table>
+    </div>
+  `;
+}
+
+function renderStages(el) {
+  el.innerHTML = '<div class="stage-grid">' +
+    stages.map(s => `
+      <div class="stage-card">
+        <div class="stage-header">
+          <div>
+            <div class="stage-num">階段 ${s.id}</div>
+            <div class="stage-title">${s.name}</div>
+          </div>
+          ${typeBadge(s.type)}
+        </div>
+        <div style="color:var(--muted);font-size:0.8rem;margin-bottom:0.5rem;">⏱ ${s.time}</div>
+        <div class="stage-scenario">
+          <ul>${s.scenario.map(x => `<li>${x}</li>`).join('')}</ul>
+        </div>
+        <div class="stage-depts">
+          ${s.depts.map(d => `<span class="dept-tag">${d}</span>`).join('')}
+        </div>
+      </div>
+    `).join('') +
+    '</div>';
+}
+
+function renderTimeline(el) {
+  el.innerHTML = '<div class="timeline">' +
+    timelineEvents.map(e => `
+      <div class="tl-item">
+        <div class="tl-day">${e.day} · ${e.time}</div>
+        <h4>${e.title}</h4>
+        <div class="tl-desc">${e.desc}</div>
+      </div>
+    `).join('') +
+    '</div>';
+}
+
+function renderOrgs(el) {
+  const central = orgs.filter(o => o.type !== '地方政府');
+  const local = orgs.filter(o => o.type === '地方政府');
+  
+  el.innerHTML = `
+    <h2 style="margin-bottom:0.5rem;">🏛️ 中央部會（31 單位）</h2>
+    <div class="participants-grid" style="margin-bottom:2rem;">
+      ${central.map(o => `
+        <div class="org-card">
+          <div class="org-type">${o.type}</div>
+          <h3>${o.name}</h3>
+          <div class="org-stages">
+            出現階段：${o.stages.map(s => `<span class="org-stage-tag">${s}</span>`).join('')}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+
+    <h2 style="margin-bottom:0.5rem;">🏙️ 地方政府（3 單位）</h2>
+    <div class="participants-grid">
+      ${local.map(o => `
+        <div class="org-card">
+          <div class="org-type">${o.type}</div>
+          <h3>${o.name}</h3>
+          <div class="org-stages">
+            出現階段：${o.stages.map(s => `<span class="org-stage-tag">${s}</span>`).join('')}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderScenarios(el) {
+  el.innerHTML = '<div class="stage-grid">' +
+    keyScenarios.map(s => `
+      <div class="stage-card">
+        <div class="stage-header">
+          <div class="stage-title" style="font-size:1rem;">${s.title}</div>
+          <span class="stage-badge badge-crisis">階段 ${s.stage}</span>
+        </div>
+        <div style="margin-bottom:0.5rem;">
+          <strong style="color:var(--accent);">觸發事件：</strong>${s.event}
+        </div>
+        <div class="stage-scenario" style="border-left-color:var(--red);">
+          <strong>連鎖效應：</strong><br>
+          ${s.chain}
+        </div>
+        <div style="margin-top:0.5rem;font-size:0.85rem;">
+          <strong style="color:var(--green);">調適應對：</strong><br>
+          <span style="color:var(--muted);">${s.response}</span>
+        </div>
+      </div>
+    `).join('') +
+    '</div>';
+}
+
+function renderReference(el) {
+  el.innerHTML = `
+    <h2 style="margin-bottom: 1rem;">📂 參考文件</h2>
+    <table class="data-table">
+      <tr><th>文件名稱</th><th>說明</th><th>來源</th></tr>
+      <tr><td>115年40℃高溫即時調適行動兵棋推演_演練手冊（草稿）</td><td>完整演練腳本，含七階段情境與各部會發言內容</td><td>環境部氣候變遷署</td></tr>
+      <tr><td>115年40℃高溫即時調適行動_兵棋推演_工作手冊0626</td><td>100+ 頁兵推工作手冊</td><td>環境部氣候變遷署</td></tr>
+      <tr><td>115年抗高溫調適對策演練會議籌備會議_議程說明</td><td>6/11 籌備會議紀錄</td><td>環境部氣候變遷署</td></tr>
+      <tr><td>環境部來文（環部氣字第1159107414號）</td><td>6/25 正式發文通知參演</td><td>環境部</td></tr>
+      <tr><td>北捷高溫與軌道安全管理</td><td>北捷軌道高溫應變 SOP（四級制）</td><td>北捷知識庫</td></tr>
+      <tr><td>酷熱天氣列車運轉處理（1150423）</td><td>北捷四級限速標準文件</td><td>北捷</td></tr>
+      <tr><td>QM-務-WI-51109 車巡 SOP</td><td>軌道高溫車巡檢查作業標準</td><td>北捷</td></tr>
+      <tr><td>國家氣候變遷科學報告 2024</td><td>GWL 4℃ 情境推估：日高溫 >36℃ 天數 +54.5 天</td><td>國科會</td></tr>
+      <tr><td>COP30 Belém Health Action Plan</td><td>國際高溫治理參照</td><td>UNFCCC</td></tr>
+      <tr><td>UNDRR 城市抗災韌性評分卡（高溫附錄）</td><td>國際城市高溫韌性評估框架</td><td>UNDRR</td></tr>
+    </table>
+
+    <h2 style="margin: 2rem 0 1rem;">👥 關鍵人物</h2>
+    <table class="data-table">
+      <tr><th>角色</th><th>姓名</th><th>單位</th></tr>
+      <tr><td>指導官</td><td>彭啓明 部長</td><td>環境部</td></tr>
+      <tr><td>指導官</td><td>謝燕儒 次長</td><td>環境部</td></tr>
+      <tr><td>指揮官（主推官）</td><td>蔡玲儀 署長</td><td>環境部氣候變遷署</td></tr>
+      <tr><td>評核官</td><td>林子平 教授</td><td>成功大學建築學系</td></tr>
+      <tr><td>評核官</td><td>王玉純 教授</td><td>中原大學環境工程學系</td></tr>
+      <tr><td>評核官</td><td>吳章甫 特聘教授</td><td>臺灣大學公共衛生學院</td></tr>
+      <tr><td>司儀</td><td>宛臻</td><td>—</td></tr>
+    </table>
+  `;
+}
+
+// Initial render
+renderOverview(document.getElementById('content'));
+</script>
+</body>
+</html>
